@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Syngas Fermentation — 4-Model AI Comparison</title>
+<script>
+MathJax = { tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+<style>
+  :root{
+    --gemini:#4285F4; --copilot:#107C10; --gpt:#10A37F; --claude:#C96442; --curtis:#6A3EA1;
+    --bg:#faf9f7; --ink:#1f2328; --muted:#6b7280; --line:#e4e0da;
+    --warn:#fff3cd; --warnBorder:#e6b800; --diverge:#ffe1e1; --divergeBorder:#d64545;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);margin:0;line-height:1.5;}
+  header.top{position:sticky;top:0;background:#1f2328;color:#fff;padding:14px 24px;z-index:50;box-shadow:0 2px 6px rgba(0,0,0,.2);}
+  header.top h1{margin:0;font-size:20px;}
+  header.top p{margin:2px 0 0;font-size:12.5px;color:#c9c9c9;}
+  nav.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 24px;background:#2d333b;}
+  nav.tabs button{background:#3a414b;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;}
+  nav.tabs button:hover{background:#4b5563;}
+  nav.tabs button.active{background:#e8b339;color:#1f2328;}
+  main{max-width:1200px;margin:0 auto;padding:24px;}
+  section.page{display:none;}
+  section.page.active{display:block;}
+  h2.section-title{font-size:26px;border-bottom:3px solid #1f2328;padding-bottom:8px;margin-top:0;}
+  h3.sub{font-size:19px;margin-top:34px;color:#1f2328;border-left:5px solid #1f2328;padding-left:10px;}
+  .modelblock{border:1px solid var(--line);border-radius:10px;margin:22px 0;overflow:hidden;background:#fff;}
+  .modelhead{padding:12px 18px;color:#fff;font-size:18px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+  .modelhead span.tag{font-size:12px;font-weight:500;opacity:.9;}
+  .gemini-h{background:var(--gemini);} .copilot-h{background:var(--copilot);} .gpt-h{background:var(--gpt);} .claude-h{background:var(--claude);} .curtis-h{background:var(--curtis);}
+  .prof{background:#f5f0fb;border-left:5px solid var(--curtis);padding:10px 14px;margin:10px 0;border-radius:6px;font-size:13.5px;}
+  .prof strong{color:var(--curtis);}
+  .modelbody{padding:6px 20px 18px;}
+  .prompt{background:#f1f0ec;border-left:5px solid #555;padding:10px 14px;margin:18px 0 10px;border-radius:6px;font-weight:600;font-size:14.5px;}
+  .prompt .tag{display:inline-block;background:#1f2328;color:#fff;border-radius:4px;padding:1px 8px;font-size:11px;margin-right:8px;vertical-align:middle;}
+  .eq{background:#fbfaf7;border:1px solid var(--line);border-radius:6px;padding:10px 16px;margin:10px 0;overflow-x:auto;}
+  .note{font-size:14px;color:#33363b;margin:6px 0;}
+  .small{font-size:12.5px;color:var(--muted);}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:#eceae4;}
+  tr:nth-child(even) td{background:#fafaf8;}
+  .diverge{background:var(--diverge) !important; border-color:var(--divergeBorder) !important;}
+  .warnrow{background:var(--warn) !important;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 20px;font-size:13px;}
+  .legend .swatch{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px;vertical-align:middle;}
+  .finalgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:18px 0;}
+  @media (max-width:1100px){ .finalgrid{grid-template-columns:repeat(2,1fr);} }
+  .finalcard{border-radius:10px;border:1px solid var(--line);overflow:hidden;background:#fff;}
+  .finalcard .fh{color:#fff;padding:10px;font-weight:700;text-align:center;}
+  .finalcard .fb{padding:12px;font-size:13.5px;}
+  .finalcard .fb table{font-size:12.5px;}
+  .bigbox{border:2px solid #1f2328;border-radius:8px;padding:14px;margin:14px 0;background:#fff;}
+  .callout{background:#eef5ff;border:1px solid #9cc3f0;border-radius:8px;padding:12px 16px;margin:14px 0;font-size:14px;}
+  .callout.red{background:#fff0ef;border-color:#e6a5a0;}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0;}
+  @media print{nav.tabs,header.top{display:none;} section.page{display:block !important;}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Syngas Fermentation to Ethanol — AI Model Comparison</h1>
+  <p>Gemini · Microsoft Copilot · ChatGPT · Claude · Dr. Curtis's Attempt — prompts (a)–(e), including the kLa follow-up</p>
+</header>
+
+<nav class="tabs">
+  <button class="tabbtn active" data-tab="p1">1 · Full Walkthroughs</button>
+  <button class="tabbtn" data-tab="p2">2 · Master Value Chart &amp; Disparities</button>
+  <button class="tabbtn" data-tab="p3">3 · Final Answers Side-by-Side</button>
+  <button class="tabbtn" id="jumpCurtis">⤷ Dr. Curtis's Attempt</button>
+</nav>
+
+<main>
+
+<!-- ============================================================ -->
+<!-- PART 1 -->
+<!-- ============================================================ -->
+<section class="page active" id="p1">
+<h2 class="section-title">Part 1 — Full Response Walkthroughs (by model, by prompt)</h2>
+<p class="note">Each block below reproduces one model's work <em>in its own words/formulas</em>, labeled with the prompt it is answering. Read top-to-bottom within a model to follow its derivation chain.</p>
+
+<!-- ================= GEMINI ================= -->
+<div class="modelblock">
+<div class="modelhead gemini-h">Gemini <span class="tag">Google</span></div>
+<div class="modelbody">
+
+<div class="prompt"><span class="tag">a</span>Generate the Stoichiometry for syngas fermentation to ethanol.</div>
+<p class="note">Basis: Wood–Ljungdahl pathway in acetogens (<em>C. autoethanogenum, C. ljungdahlii, Eubacterium limosum</em>).</p>
+<div class="eq">\[ 6CO + 3H_2O \rightarrow C_2H_5OH + 4CO_2 \qquad (\Delta G^{\circ\prime} \text{ negative / favorable}) \]</div>
+<p class="note">CO is oxidized to \(CO_2\) (2 e⁻/mol) while simultaneously reduced to ethanol.</p>
+<div class="eq">\[ 6H_2 + 2CO_2 \rightarrow C_2H_5OH + 3H_2O \]</div>
+<p class="note">Requires high \(H_2:CO_2\) ratio, ideally \(3:1\).</p>
+<div class="eq">
+\[ 4CO + 2H_2O \rightarrow CH_3COO^- + H^+ + 2CO_2 \]
+\[ 4H_2 + 2CO_2 \rightarrow CH_3COO^- + H^+ + 2H_2O \]
+</div>
+<p class="note">Degree of reduction of ethanol: \(\gamma = 6\). Cells shift acidogenesis → solventogenesis depending on pH / cell density / redox potential.</p>
+
+<div class="prompt"><span class="tag">b</span>Add Biomass and Acetate Yields</div>
+<p class="note">Biomass empirical formula (acetogen standard):</p>
+<div class="eq">\[ CH_{1.8}O_{0.5}N_{0.2} \]</div>
+<p class="note">Biomass synthesis (independent pathways):</p>
+<div class="eq">
+\[ 1.0\,CO + 0.05\,NH_3 + 0.35\,H_2O \rightarrow 0.25\,(CH_{1.8}O_{0.5}N_{0.2}) + 0.75\,CO_2 \]
+\[ 0.75\,H_2 + 0.25\,CO_2 + 0.05\,NH_3 \rightarrow 0.25\,(CH_{1.8}O_{0.5}N_{0.2}) + 0.5\,H_2O \]
+</div>
+<p class="note">Comprehensive global stoichiometry (molar yield coefficients):</p>
+<div class="eq">\[ x_{CO}CO + x_{CO_2}CO_2 + x_{H_2}H_2 + y_N NH_3 \rightarrow y_X\text{Biomass} + y_{EtOH}\text{Ethanol} + y_{Ac}\text{Acetate} \]</div>
+<table>
+<tr><th>Parameter</th><th>Symbol</th><th>Typical range</th><th>Description</th></tr>
+<tr><td>Biomass yield on substrate</td><td>\(Y_{X/S}\)</td><td>\(0.05\text{–}0.15\) g-DCW/g-substrate</td><td>Inherently slow growth, low ATP yield</td></tr>
+<tr><td>Ethanol yield on substrate</td><td>\(Y_{P/S}\) (EtOH)</td><td>\(0.30\text{–}0.45\) g/g</td><td>Mass fraction of carbon → ethanol</td></tr>
+<tr><td>Acetate yield on substrate</td><td>\(Y_{P/S}\) (Ac)</td><td>\(0.05\text{–}0.20\) g/g</td><td>Unavoidable, for ATP homeostasis (acetate kinase)</td></tr>
+<tr><td>Product ratio</td><td>EtOH/Acetate</td><td>\(2:1\) to \(6:1\) molar</td><td>pH- and \(k_La\)-dependent</td></tr>
+</table>
+
+<div class="prompt"><span class="tag">c</span>What Syngas composition will provide the balanced mass transfer to satisfy this stoichiometry?</div>
+<div class="eq">\[ H_2 : CO : CO_2 \approx 1.0:1.0:0.4 \ \text{ to } \ 1.2:1.0:0.5 \]</div>
+<table>
+<tr><th>Component</th><th>Vol/mol %</th><th>Role</th></tr>
+<tr><td>CO</td><td>30–40%</td><td>Carbon source + electron donor (via CODH)</td></tr>
+<tr><td>H₂</td><td>30–40%</td><td>Clean electron donor for solventogenesis</td></tr>
+<tr><td>CO₂</td><td>10–20%</td><td>Carbon buffer, drives carboxylation</td></tr>
+<tr><td>Inerts (N₂/trace)</td><td>0–20%</td><td>Partial-pressure/flow control</td></tr>
+</table>
+<p class="note">Benchmark lab mix: \(32.5\%\,CO,\ 32.5\%\,H_2,\ 16\%\,CO_2,\ 19\%\,N_2\). Gas-phase ≠ liquid-phase composition: CO/H₂ are \(60\%\text{–}80\%\) less soluble than O₂ at 37 °C; CO inhibition threshold \(>0.06\ mM\).</p>
+
+<div class="prompt"><span class="tag">d</span>Reactor 15 psig: \(k_La(CO)=200\ hr^{-1}\); V = 1000 L; AR = 3:1; Q = 200 L/min</div>
+<p class="note"><strong>Geometry</strong> (\(V=1.0\ m^3\), \(H:D=3:1\)):</p>
+<div class="eq">\[ D \approx 0.75\ m \ (75.2\ cm), \quad H \approx 2.26\ m, \quad A \approx 0.444\ m^2 \]</div>
+<p class="note"><strong>Pressure:</strong> \(P_{abs}=15\ psig+14.7\ psi \approx 29.7\ psia \approx 2.02\ atm\ (204.5\ kPa)\) — roughly doubles \(C^{*}\) vs. 1 atm.</p>
+<p class="note"><strong>Superficial velocity</strong> (\(Q=200\ L/min=12\ m^3/hr\)):</p>
+<div class="eq">\[ v_s = \frac{Q}{A} = \frac{12\ m^3/hr}{0.444\ m^2} \approx 27.0\ m/hr\ \ (0.0075\ m/s) \]</div>
+<p class="note"><strong>CO Transfer Rate:</strong></p>
+<div class="eq">\[ OTR_{CO}=k_La_{CO}\cdot(C^*_{CO}-C_{CO}) \]</div>
+<p class="note">At 35% CO, 2.02 atm abs → \(P_{CO}\sim0.71\ atm\); \(C^*_{CO}\approx0.56\ mol/m^3\):</p>
+<div class="eq">\[ OTR_{CO}=200\ hr^{-1}\times0.56\ mol/m^3\approx112\ mol\ CO/(m^3\cdot hr) \]</div>
+<p class="note"><strong>→ ≈112 mol CO/hr deliverable</strong> for the 1000 L reactor.</p>
+
+<div class="prompt"><span class="tag">d·2</span>Why is the hydrogen \(k_La\) smaller than CO \(k_La\) when the diffusion rate of H₂ is faster than CO?</div>
+<p class="note">Gemini corrects the premise: <strong>\(k_La(H_2)\) is actually larger, not smaller</strong>, than \(k_La(CO)\).</p>
+<div class="eq">\[ D_{H_2\text{-water}}\approx4.5\times10^{-9}\ m^2/s \quad vs. \quad D_{CO\text{-water}}\approx2.0\times10^{-9}\ m^2/s \]</div>
+<p class="note">Penetration/surface-renewal theory: \(k_L \propto D^{\,n}\), \(n\approx0.5\) to \(0.67\); interfacial area \(a\) is identical for both gases (same bubbles) →</p>
+<div class="eq">\[ k_La_{H_2} \approx 1.4\text{–}1.6\times k_La_{CO} \]</div>
+<p class="note">Where the "H₂ is harder to transfer" intuition comes from: <strong>solubility</strong> \(C^*\), not \(k_La\) — \(C^*_{H_2}\) is roughly <em>half</em> of \(C^*_{CO}\), and \(OTR = k_La\cdot(C^*-C)\), so the low driving force (plus fast biological H₂ uptake pinning \(C_{L}\approx0\)) creates the bottleneck, not the coefficient itself.</p>
+
+<div class="prompt"><span class="tag">d·2 (cont.)</span>Above, you stated \(k_La(H_2)=\_\_\). How do you account for this difference?</div>
+<div class="eq">\[ k_La_{H_2} \approx 316\ hr^{-1} \quad (\text{from } k_La_{CO}=200\ hr^{-1}) \]</div>
+<p class="note">Diffusion coefficients at 37 °C: \(D_{H_2}\approx5.5\times10^{-9}\ m^2/s\); \(D_{CO}\approx2.2\times10^{-9}\ m^2/s\) → H₂ diffuses <strong>~2.5× faster</strong>.</p>
+
+<div class="prompt"><span class="tag">e</span>Design a gas composition using these values.</div>
+<p class="note">Penetration theory (\(n=0.5\), Higbie / Akita–Yoshida):</p>
+<div class="eq">\[ \frac{k_La_{H_2}}{k_La_{CO}} = \left(\frac{D_{H_2}}{D_{CO}}\right)^{0.5} = \sqrt{2.5} \approx 1.58 \]
+\[ k_La_{H_2} = 200\ hr^{-1}\times1.581 = 316.2\ hr^{-1} \]</div>
+<p class="note">Gas-transfer-rate equilibrium (Henry's law form):</p>
+<div class="eq">\[ GTR_i = k_La_i \cdot H_i \cdot P_i \]</div>
+<p class="note">\(H_{CO}\approx0.78\ \tfrac{mol}{m^3\cdot atm}\), \(H_{H_2}\approx0.72\ \tfrac{mol}{m^3\cdot atm}\) (37 °C) →</p>
+<div class="eq">\[ \text{CO capacity}=200\times0.78=156.0\ \tfrac{mol}{m^3\cdot hr\cdot atm}, \qquad \text{H}_2\text{ capacity}=316.2\times0.72=227.7\ \tfrac{mol}{m^3\cdot hr\cdot atm} \]</div>
+<p class="note">H₂ transfers \(1.46\times\) faster per unit partial pressure → the <strong>inlet gas needs a higher CO partial pressure than H₂</strong> to equalize the dissolved (liquid-phase) molar rate.</p>
+<table>
+<tr><th>Component</th><th>Vol %</th><th>\(P_i\) @ 15 psig</th><th>\(GTR_i\)</th><th>Role</th></tr>
+<tr><td>CO</td><td>45.0%</td><td>0.909 atm</td><td>141.9 mol/(m³·hr)</td><td>Primary C source + e⁻ donor</td></tr>
+<tr><td>H₂</td><td>32.0%</td><td>0.647 atm</td><td>147.2 mol/(m³·hr)</td><td>Dedicated reducing equivalents</td></tr>
+<tr><td>CO₂</td><td>18.0%</td><td>0.364 atm</td><td>unconstrained</td><td>Carbon backbone, WLP</td></tr>
+<tr><td>Inerts (N₂/CH₄)</td><td>5.0%</td><td>0.101 atm</td><td>none</td><td>Carrier gas</td></tr>
+</table>
+<p class="note">Resulting liquid-phase molar ratio \(H_2:CO = 1.04:1.00\) — matches the \(1{:}1\) metabolic uptake target. Total CO capacity 141.9 mol/hr; total H₂ capacity 147.2 mol/hr. Max theoretical ethanol \(\approx2.1\text{–}2.4\ kg/(m^3\cdot hr)\). Stated single-pass CO conversion \(\approx56\%\) off a quoted total gas flow of <strong>566 mol/hr</strong> (see Part 2 — this figure is inconsistent with Gemini's own reactor-condition gas law basis).</p>
+</div>
+</div>
+
+<!-- ================= COPILOT ================= -->
+<div class="modelblock">
+<div class="modelhead copilot-h">Microsoft Copilot</div>
+<div class="modelbody">
+
+<div class="prompt"><span class="tag">a</span>Generate the Stoichiometry for syngas fermentation to ethanol.</div>
+<div class="eq">
+\[ 6CO + 3H_2O \rightarrow C_2H_5OH + 4CO_2 \]
+\[ 2CO_2 + 6H_2 \rightarrow C_2H_5OH + 3H_2O \]
+</div>
+<p class="note">Element-balance checks shown explicitly (C, H, O) for both routes.</p>
+
+<div class="prompt"><span class="tag">b</span>Add Biomass and Acetate Yields</div>
+<p class="note">Combined CO-uptake + water-gas-shift route (no net \(CO_2\)):</p>
+<div class="eq">\[ 2CO + 4H_2 \rightarrow C_2H_5OH + H_2O \]</div>
+<p class="note">Theoretical yields: \(6\ mol\ CO \rightarrow 1\ mol\ ethanol\); \(168\ g\ CO \rightarrow 46\ g\ ethanol\); max \(=0.274\ g\ EtOH/g\ CO\).</p>
+<p class="note"><strong>Acetate:</strong></p>
+<div class="eq">
+\[ 4CO + 2H_2O \rightarrow CH_3COOH + 2CO_2 \]
+\[ 2CO_2 + 4H_2 \rightarrow CH_3COOH + 2H_2O \]
+</div>
+<p class="note"><strong>Biomass</strong> (\(CH_{1.8}O_{0.5}N_{0.2}\)):</p>
+<div class="eq">\[ CO + 0.24\,H_2O + 0.10\,NH_3 \rightarrow CH_{1.8}O_{0.5}N_{0.2} + 0.50\,CO_2 \]</div>
+<p class="note">Generalized form:</p>
+<div class="eq">\[ aCO + bH_2 + cNH_3 \rightarrow xC_2H_5OH + yCH_3COOH + zCH_{1.8}O_{0.5}N_{0.2} + dCO_2 + eH_2O \]</div>
+
+<div class="prompt"><span class="tag">c</span>What Syngas composition will provide the balanced mass transfer to satisfy this stoichiometry?</div>
+<p class="note">Illustrative product split: 70–85% C→ethanol, 10–25% C→acetate, 3–10% C→biomass, i.e. 0.8 mol EtOH : 0.2 mol Ac : 0.05 mol biomass.</p>
+<p class="note"><strong>Step 1 – Carbon requirement:</strong></p>
+<div class="eq">\[ 0.8(2)+0.2(2)+0.05(1) = 2.05\ mol\ C \]</div>
+<p class="note"><strong>Step 2 – Electron requirement</strong> (e⁻ per mol: EtOH=12, Ac=8, Biomass≈4.2):</p>
+<div class="eq">\[ 0.8(12)+0.2(8)+0.05(4.2)=11.41\ e^-\text{ equivalents} \Rightarrow n_{CO}+n_{H_2}=\frac{11.41}{2}=5.70 \]</div>
+<p class="note"><strong>Step 3 – Solve CO/H₂ split</strong> (carbon balance \(n_{CO}+n_{CO_2}=2.05\); electron balance \(n_{CO}+n_{H_2}=5.70\)); assume CO alone fixes carbon (2.05 mol):</p>
+<div class="eq">\[ n_{H_2}=5.70-2.05=3.65 \quad\Rightarrow\quad \frac{H_2}{CO}=\frac{3.65}{2.05}=1.78 \]</div>
+<div class="eq">\[ \boxed{35\%\,CO,\ 60\%\,H_2,\ 5\%\,CO_2} \qquad H_2/CO\approx1.7 \]</div>
+<table>
+<tr><th>Product target</th><th>Required \(H_2/CO\)</th></tr>
+<tr><td>Mostly acetate</td><td>0–0.5</td></tr>
+<tr><td>Mixed acetate/ethanol</td><td>0.5–1.2</td></tr>
+<tr><td>Ethanol-focused</td><td>1.5–2.0</td></tr>
+<tr><td>Near-theoretical ethanol</td><td>2.0–2.5</td></tr>
+</table>
+<p class="note">Practical design guideline: \(CO=30\text{–}40\%,\ H_2=50\text{–}65\%,\ CO_2=5\text{–}20\%\), \(H_2/CO=1.5\text{–}2.0\).</p>
+
+<div class="prompt"><span class="tag">d</span>Reactor 15 psig: \(k_La(CO)=200\ hr^{-1}\); V = 1000 L; AR = 3:1; Q = 200 L/min</div>
+<p class="note">Given: \(V=1.0\ m^3\), \(P_{abs}=2.02\ atm\), \(Q=12\ m^3/hr\), \(k_La_{CO}=200\ hr^{-1}\).</p>
+<p class="note">Assuming dissolved CO ≈ 0 (rapid biological uptake):</p>
+<div class="eq">\[ N_{CO}\approx k_La\cdot C^*_{CO}\cdot V, \qquad C^*_{CO}\approx0.95\ mmol\,L^{-1}atm^{-1} \]</div>
+<p class="note">At 2.02 atm, 35% CO: \(P_{CO}=0.35(2.02)=0.707\ atm \Rightarrow C^*_{CO}\approx0.95\times0.707\approx0.67\ mmol/L\)</p>
+<div class="eq">\[ N_{CO}=200\times0.67=134\ mmol/(L\cdot hr) \ \Rightarrow\ \boxed{N_{CO}\approx134\ mol/h} \]</div>
+<p class="note"><strong>Gas availability</strong> (ideal gas, \(n=PV/RT\)):</p>
+<div class="eq">\[ n_{gas}=\frac{PV}{RT}=\frac{2.02(12000)}{0.08205(308)}\approx960\ mol/h \]</div>
+<p class="note">At 35% CO: \(336\ mol/h\ CO\) fed, only \(134\ mol/h\) can transfer →</p>
+<div class="eq">\[ CO\ utilization=\frac{134}{336}\approx40\% \]</div>
+<p class="note"><strong>Ethanol production</strong> (\(6CO\rightarrow1\,EtOH+4CO_2\)):</p>
+<div class="eq">\[ EtOH=\frac{134}{6}=22.3\ mol/h, \quad 22.3\times46=1.03\ kg/h \]</div>
+<p class="note">Realistically (70–85% EtOH / 10–20% Ac / 5–10% biomass split): \(0.75\text{–}0.90\ kg/h\) ethanol.</p>
+<p class="note"><strong>Syngas composition to match electron demand</strong> (\(H_2/CO\approx1.7\text{–}1.8\)):</p>
+<div class="eq">\[ CO=134\ mol/h \ \Rightarrow\ H_2=1.8(134)=241\ mol/h \quad(\text{total reductant }375\ mol/h) \]</div>
+<div class="eq">\[ \boxed{30\text{–}35\%\,CO,\ \ 55\text{–}60\%\,H_2,\ \ 5\text{–}15\%\,CO_2} \]</div>
+
+<div class="prompt"><span class="tag">e</span>Design a gas composition using these values.</div>
+<p class="note"><strong>Step 1 — CO transfer ceiling:</strong> \(N_{CO}\approx134\ mol\,h^{-1}\) (from reactor given: 1000 L, \(k_La=200\ h^{-1}\), 15 psig, dissolved CO ≈ 0).</p>
+<p class="note"><strong>Step 2 — Match H₂ to product split</strong> (\(H_2/CO\approx1.8\)):</p>
+<div class="eq">\[ H_2 = 1.8(134) = 241\ mol\,h^{-1} \]</div>
+<p class="note"><strong>Step 3 — Add CO₂ for carbon fixation</strong> (target 10%):</p>
+<div class="eq">\[ \boxed{H_2=58\%,\quad CO=32\%,\quad CO_2=10\%} \qquad \frac{H_2}{CO}=\frac{58}{32}=1.81 \]</div>
+<p class="note"><strong>Flow breakdown</strong> at 960 mol/h total (200 L/min, 15 psig):</p>
+<div class="eq">\[ CO: 0.32(960)=307\ mol/h,\qquad H_2: 0.58(960)=557\ mol/h,\qquad CO_2: 0.10(960)=96\ mol/h \]</div>
+<p class="note"><strong>Utilization:</strong> \(CO=\tfrac{134}{307}=44\%\); \(H_2\) uptake \(241\ mol/h=43\%\) of incoming H₂.</p>
+<p class="note"><strong>Predicted production</strong> (80% C→EtOH, 15% C→Ac, 5% C→biomass): Ethanol \(\approx0.8\text{–}1.0\ kg/h\); Acetate \(\approx0.15\text{–}0.25\ kg/h\); Biomass \(\approx0.03\text{–}0.08\ kg/h\).</p>
+<p class="small">Copilot was then asked "Give me a final list of all values" — its consolidated table reproduces exactly these numbers (see Part 2 master chart).</p>
+</div>
+</div>
+
+<!-- ================= GPT ================= -->
+<div class="modelblock">
+<div class="modelhead gpt-h">ChatGPT <span class="tag">prompts appear as shaded quote-boxes in its transcript</span></div>
+<div class="modelbody">
+
+<div class="prompt"><span class="tag">a</span>Generate the Stoichiometry for syngas fermentation to ethanol.</div>
+<table>
+<tr><th>Feed route</th><th>Net stoichiometric reaction</th></tr>
+<tr><td>CO, no external H₂</td><td>\(6CO+3H_2O\rightarrow C_2H_5OH+4CO_2\)</td></tr>
+<tr><td>CO with H₂</td><td>\(2CO+4H_2\rightarrow C_2H_5OH+H_2O\)</td></tr>
+<tr><td>CO₂ with H₂</td><td>\(2CO_2+6H_2\rightarrow C_2H_5OH+3H_2O\)</td></tr>
+</table>
+<p class="note">Each reaction yields one mole of ethanol; GPT flags these as <em>theoretical</em>, noting real fermentation diverts carbon/electrons to biomass and acetate.</p>
+
+<div class="prompt"><span class="tag">b</span>Add Biomass and Acetate Yields</div>
+<p class="note">Biomass \(CH_{1.8}O_{0.5}N_{0.2}\), \(NH_3\) N-source. Let \(r=\) mol acetic acid / mol ethanol, \(s=\) carbon-mol biomass / mol ethanol (CO-only feed):</p>
+<div class="eq">\[ (6+4r+2.1s)\,CO + (3+2r+0.6s)\,H_2O + 0.2s\,NH_3 \rightarrow C_2H_5OH + r\,CH_3COOH + s\,CH_{1.8}O_{0.5}N_{0.2} + (4+2r+1.1s)\,CO_2 \]</div>
+<p class="note">For a mixed CO/CO₂/H₂ feed, GPT instead writes two governing balances (E, A, X = ethanol/acetate/biomass yields on chosen basis):</p>
+<div class="eq">
+\[ F_{CO}+F_{H_2}=6E+4A+2.1X \qquad \text{(electron balance)} \]
+\[ F_{CO}+F_{CO_2}=2E+2A+X+F_{CO_2,out} \qquad \text{(carbon balance)} \]
+</div>
+
+<div class="prompt"><span class="tag">c</span>What Syngas composition will provide the balanced mass transfer to satisfy this stoichiometry?</div>
+<p class="note">GPT's position: <strong>there is no single composition</strong> until \(r,s\) (yields) and gas utilizations are fixed. If all fed carbon is retained in products (no net \(CO_2\) leaving):</p>
+<div class="eq">
+\[ n_{CO}+n_{CO_2}=2+2r+s \]
+\[ n_{CO}+n_{H_2}=6+4r+2.1s \]
+\[ \boxed{\dfrac{H_2}{CO}=\dfrac{4+2r+1.1s}{2+2r+s}} \]
+</div>
+<p class="note">Example (\(r=0.20,\ s=0.10\)): uptake \(=2.50\ mol\,CO,\ 4.51\ mol\,H_2\) per mol ethanol → <strong>35.7% CO / 64.3% H₂ on a consumed-gas basis</strong> — explicitly <em>not</em> to be used directly as an inlet spec. Correct inlet form accounts for fractional utilization \(\eta\):</p>
+<div class="eq">\[ \left(\frac{H_2}{CO}\right)_{in} = \frac{4+2r+1.1s}{2+2r+s}\cdot\frac{\eta_{CO}}{\eta_{H_2}} \]</div>
+
+<div class="prompt"><span class="tag">d</span>Reactor 15 psig: \(k_La(CO)=200\ hr^{-1}\); V = 1000 L; AR = 3:1; Q = 200 L/min</div>
+<p class="note">Using the illustrative yields above, required uptake per mole ethanol:</p>
+<div class="eq">\[ 2.50\,CO+4.51\,H_2+0.02\,NH_3 \rightarrow C_2H_5OH+0.20\,CH_3COOH+0.10\,CH_{1.8}O_{0.5}N_{0.2}+1.05\,H_2O \]</div>
+<p class="note">Consumed-gas ratio \(H_2:CO=1.80:1\). At 15 psig → \(\approx2.02\ atm\) abs; \(P_{CO}\approx0.72\ atm\) (at 35.7% CO). Using illustrative \(C^*\)-slope \(1.0\ mmol\,L^{-1}atm^{-1}\), dissolved CO ≈ 0:</p>
+<div class="eq">\[ CO\ transfer \approx (200)(1.0)(0.72)(1000) = 144\ mol/h = 2.4\ mol/min \]</div>
+<p class="note">→ ethanol estimate \(2.4/2.50=0.96\ mol/min\) (\(\approx2.65\ kg/h\)); requires \(4.33\ mol/min\ H_2\) uptake. GPT immediately flags ambiguity in "200 L/min":</p>
+<table>
+<tr><th>If 200 L/min means…</th><th>CO fed at 35.7% CO</th><th>CO uptake needed</th></tr>
+<tr><td>Actual L/min, 15 psig, 30 °C</td><td>~5.8 mol/min</td><td>~41% of fed CO</td></tr>
+<tr><td>Reference L/min, 1 atm, 25 °C</td><td>~2.9 mol/min</td><td>~82% of fed CO</td></tr>
+</table>
+<p class="note">Geometry: \(D\approx0.75\ m\), \(H\approx2.25\ m\); superficial velocity \(\approx0.0075\ m/s\) (if actual flow).</p>
+
+<div class="prompt"><span class="tag">d·2</span>Why is the hydrogen kLa smaller than CO kLa when diffusion rate of H₂ is faster than CO?</div>
+<p class="note">GPT: faster \(H_2\) diffusion does <strong>not by itself imply a smaller \(H_2\ k_La\)</strong> — under identical hydrodynamics, \(k_L\) should be larger for H₂. Distinguishes coefficient vs. amount transferred:</p>
+<div class="eq">\[ \text{H}_2\text{ transfer rate} = k_La_{H_2}\cdot V_L\cdot\left(C^*_{H_2}-C_{L,H_2}\right) \]</div>
+<p class="note">Clarifies it never actually reported a measured \(k_La_{H_2}\) — "\(CO\ k_La=200\ h^{-1}\) does not establish \(H_2\ k_La\)"; recommends measuring H₂ uptake/off-gas directly.</p>
+
+<div class="prompt"><span class="tag">e</span>Design a gas composition using these values.</div>
+<p class="note">Provisional inlet (design calc, <em>not</em> a measured optimum): <strong>38 mol% CO / 62 mol% H₂</strong>, no added CO₂, assuming 200 L/min is actual flow at reactor conditions, 30 °C.</p>
+<table>
+<tr><th>Provisional calc</th><th>Value</th></tr>
+<tr><td>Inlet gas flow</td><td>~16.25 mol/min</td></tr>
+<tr><td>CO / H₂ inlet flow</td><td>~6.24 / 10.01 mol/min</td></tr>
+<tr><td>CO / H₂ uptake</td><td>~2.75 / 4.97 mol/min</td></tr>
+<tr><td>CO / H₂ utilization</td><td>~44% / 50%</td></tr>
+<tr><td>Theoretical ethanol rate</td><td>~1.10 mol/min (3.05 kg/h)</td></tr>
+</table>
+<p class="note">GPT explicitly flags this used an <strong>assumed</strong> \(k_La_{H_2}=320\ h^{-1}\) (never measured) and solubilities \(1.00\)/\(0.78\ mmol\,L^{-1}atm^{-1}\) for CO/H₂.</p>
+<div class="callout red"><strong>Self-correction:</strong> GPT then flags its own numbers as internally inconsistent ("previously quoted CO/H₂ inlet rates, CO uptake, and ethanol rate were inconsistent with a 38/62 feed and the stated CO-transfer inputs") and issues a corrected table:</div>
+<table>
+<tr><th>Corrected parameter</th><th>Value</th></tr>
+<tr><td>CO feed / H₂ feed (at 16.25 mol/min total)</td><td>6.17 / 10.07 mol/min</td></tr>
+<tr><td>CO transfer ceiling (\(k_La=200\ h^{-1}\))</td><td>2.56 mol/min (154 mol/h)</td></tr>
+<tr><td>H₂ transfer ceiling (assumed \(k_La=320\ h^{-1}\))</td><td>5.21 mol/min (313 mol/h)</td></tr>
+<tr><td>Limiting gas</td><td>CO</td></tr>
+<tr><td>CO / H₂ utilization</td><td>41.5% / 45.8%</td></tr>
+<tr><td>Ethanol production</td><td>1.02 mol/min = <strong>2.83 kg/h</strong></td></tr>
+<tr><td>Acetate production</td><td>0.205 mol/min (acetic-acid equiv.)</td></tr>
+<tr><td>Biomass production</td><td>0.102 carbon-mol/min (~0.151 kg/h)</td></tr>
+</table>
+<p class="note">Final net reaction used: \(2.50\,CO+4.51\,H_2+0.020\,NH_3\rightarrow C_2H_5OH+0.20\,CH_3COOH+0.10\,CH_{1.8}O_{0.5}N_{0.2}+1.05\,H_2O\).</p>
+</div>
+</div>
+
+<!-- ================= CLAUDE ================= -->
+<div class="modelblock">
+<div class="modelhead claude-h">Claude</div>
+<div class="modelbody">
+
+<div class="prompt"><span class="tag">a</span>Generate the Stoichiometry for syngas fermentation to ethanol.</div>
+<div class="eq">
+\[ 6CO+3H_2O \rightarrow C_2H_5OH+4CO_2 \qquad \text{(CO as electron donor)} \]
+\[ 6H_2+2CO_2 \rightarrow C_2H_5OH+3H_2O \qquad \text{(H}_2\text{/CO}_2\text{ as electron donor)} \]
+</div>
+<p class="note">Mixed feed modeled as a weighted combination of the two, based on feed CO:H₂:CO₂. Competing acetate pathway:</p>
+<div class="eq">
+\[ 4CO+2H_2O \rightarrow CH_3COOH+2CO_2 \]
+\[ 2CO_2+4H_2 \rightarrow CH_3COOH+2H_2O \]
+</div>
+<p class="note">Ethanol vs. acetate selectivity governed by NADH/NAD⁺ ratio and ATP availability; ethanol synthesis is the non-ATP-yielding, more-reduced branch.</p>
+
+<div class="prompt"><span class="tag">b</span>Add Biomass and Acetate Yields</div>
+<p class="note">Biomass \(CH_{1.8}O_{0.5}N_{0.2}\) (MW \(\approx24.6\ g/mol\)), N-source \(NH_3/NH_4^+\). General balance with four closure constraints:</p>
+<div class="eq">\[ aCO+bH_2+cNH_3 \rightarrow wC_2H_5OH+xCH_3COOH+yCH_{1.8}O_{0.5}N_{0.2}+zCO_2+uH_2O \]</div>
+<div class="eq">
+\[ C:\ a=2w+2x+y \qquad H:\ 2b+3c=6w+4x+1.8y+2u \]
+\[ O:\ a=2x+0.5y+2z+u \qquad N:\ c=0.2y \]
+</div>
+<table>
+<tr><th>Product</th><th>Yield basis</th><th>Typical range (C. ljungdahlii / autoethanogenum)</th></tr>
+<tr><td>Ethanol</td><td>mol EtOH / mol CO consumed</td><td>0.10–0.30</td></tr>
+<tr><td>Acetate</td><td>mol HAc / mol CO consumed</td><td>0.15–0.35</td></tr>
+<tr><td>Biomass</td><td>g DCW / mol CO consumed</td><td>0.5–2.0 g/mol</td></tr>
+<tr><td>Ethanol:Acetate</td><td>mass or molar</td><td>1:1 (wild type) up to &gt;10:1 (engineered)</td></tr>
+<tr><td>Carbon → biomass</td><td>% of total C uptake</td><td>3–8%</td></tr>
+<tr><td>Carbon → CO₂ (off-gas)</td><td>% of total C uptake</td><td>30–50%</td></tr>
+</table>
+<p class="note">Illustrative combined reaction (\(\approx3{:}1\) EtOH:Acetate molar, balanced to \(\sim98\%\) closure):</p>
+<div class="eq">\[ 12CO+5H_2O \rightarrow C_2H_5OH+0.33\,CH_3COOH+0.15\,CH_{1.8}O_{0.5}N_{0.2}+9.2\,CO_2+0.03\,NH_3 \]</div>
+<p class="note">Operational levers: \(\uparrow H_2{:}CO\) favors ethanol; \(\downarrow pH\) (4.5–5) favors solventogenesis; low biomass yield is industrially <em>desired</em> (routes more carbon to ethanol).</p>
+
+<div class="prompt"><span class="tag">c</span>What Syngas composition will provide the balanced mass transfer to satisfy this stoichiometry?</div>
+<div class="eq">\[ OTR_i = k_La_i\left(C^*_i-C_{L,i}\right), \qquad C^*_i = p_i/H_i \]</div>
+<p class="note">CO is ~1.5–2× more soluble than H₂ but diffuses more slowly; H₂ is less soluble but diffuses faster — so a feed "balanced" by mole fraction will <em>not</em> deliver gases in that same ratio.</p>
+<table>
+<tr><th>Parameter</th><th>Target</th><th>Reason</th></tr>
+<tr><td>CO</td><td>40–55 mol%</td><td>Primary C + e⁻ donor</td></tr>
+<tr><td>H₂</td><td>25–35 mol%</td><td>Supplemental reducing power, pushes NADH pool to ethanol</td></tr>
+<tr><td>CO₂</td><td>10–20 mol%</td><td>Electron acceptor when H₂ co-utilized</td></tr>
+<tr><td>N₂/CH₄/inerts</td><td>&lt;10 mol%</td><td>Dilutes partial pressures — minimize</td></tr>
+<tr><td>\(H_2:CO\)</td><td>~0.5–0.8</td><td>Below 0.3 → acetate dominates; above 1.0 → diminishing returns</td></tr>
+</table>
+
+<div class="prompt"><span class="tag">d</span>Reactor 15 psig: \(k_La(CO)=200\ hr^{-1}\); V = 1000 L; AR = 3:1; Q = 200 L/min</div>
+<p class="note"><strong>Geometry</strong> (\(V=\tfrac{\pi}{4}D^2H=1000\ L\), \(H=3D\)):</p>
+<div class="eq">\[ D^3=\frac{4V}{3\pi}=0.425\ m^3 \ \Rightarrow\ D=0.753\ m,\quad H=2.26\ m,\quad A_{cross}=0.445\ m^2 \]</div>
+<p class="note"><strong>Average operating pressure</strong> (headspace + hydrostatic head):</p>
+<div class="eq">\[ P_{headspace}=2.02\ atm\ abs,\quad \Delta P_{head}=\frac{\rho g (H/2)}{101325}\approx0.11\ atm \ \Rightarrow\ P_{avg}\approx2.13\ atm\ abs \]</div>
+<p class="note"><strong>Henry's law</strong> at 37 °C, feed assumed CO 45% / H₂ 30% / CO₂ 15%:</p>
+<table>
+<tr><th>Gas</th><th>\(k_H\) (mol/L·atm)</th><th>Feed %</th><th>\(p_i\) (atm)</th><th>\(C^*\) (mol/L)</th></tr>
+<tr><td>CO</td><td>\(8.1\times10^{-4}\)</td><td>45%</td><td>0.958</td><td>\(7.7\times10^{-4}\)</td></tr>
+<tr><td>H₂</td><td>\(6.6\times10^{-4}\)</td><td>30%</td><td>0.639</td><td>\(4.2\times10^{-4}\)</td></tr>
+<tr><td>CO₂</td><td>\(2.9\times10^{-2}\)</td><td>15%</td><td>0.320</td><td>\(9.3\times10^{-3}\)</td></tr>
+</table>
+<p class="note">CO₂ is ~35–40× more soluble — essentially never mass-transfer-limited.</p>
+<div class="eq">\[ OTR_{CO}=k_La\cdot C^*_{CO}=200\times7.7\times10^{-4}=0.155\ \tfrac{mol}{L\cdot hr} \ \Rightarrow\ 155\ mol/hr\ \text{(1000 L)} \]</div>
+<p class="note">Feed basis: \(\dot n_{total}=\dfrac{200\,L/min\times60}{22.4\,L/mol}=536\ mol/hr\); \(\dot n_{CO,feed}=0.45(536)=241\ mol/hr\):</p>
+<div class="eq">\[ CO\ utilization=\frac{155}{241}=64\% \]</div>
+<p class="note"><strong>Required H₂ \(k_La\) to stay matched</strong> (target \(H_2{:}CO=0.667\) from the 30:45 feed split):</p>
+<div class="eq">\[ \dot n_{H_2,target}=0.667\times155=103\ mol/hr \ \Rightarrow\ k_La_{H_2,required}=\frac{103}{1000\times4.2\times10^{-3}}\approx245\ hr^{-1} \]</div>
+<p class="note">Scaling check (\(k_La\propto\sqrt D\), \(D_{H_2}/D_{CO}\approx2.4\)):</p>
+<div class="eq">\[ k_La_{H_2}\approx\sqrt{2.4}\times200\approx310\ hr^{-1} \quad(\text{exceeds the }245\ hr^{-1}\text{ required — CO remains limiting}) \]</div>
+<p class="note">Productivity at 64% CO utilization (\(\sim12\,CO\rightarrow1\,EtOH+0.33\,HAc\)): Ethanol 12.9 mol/hr = 594 g/hr = 14.3 kg/day; Acetate 4.26 mol/hr = 256 g/hr = 6.1 kg/day.</p>
+<p class="note">Levers to reach 80–90% utilization: raise pressure to ~30 psig (→85%), raise \(k_La\) to ~310 \(h^{-1}\) (→87%), cut feed flow to ~150 L/min, or recycle off-gas (&gt;90%).</p>
+
+<div class="prompt"><span class="tag">e</span>Design a gas composition using these values.</div>
+<p class="note">Target delivered ratio (back-calculated from mass-transfer capability, not naive stoichiometric feed ratio): <strong>CO:H₂:CO₂ = 3:2:1</strong>.</p>
+<table>
+<tr><th>Gas</th><th>Regime</th><th>Estimated \(k_La\) (\(hr^{-1}\))</th></tr>
+<tr><td>CO</td><td>Mass-transfer limited</td><td>200 (given)</td></tr>
+<tr><td>H₂</td><td>Mass-transfer limited</td><td>≈300 (\(\propto\sqrt{D}\))</td></tr>
+<tr><td>CO₂</td><td>Feed/absorption limited</td><td>≈195 (irrelevant — fully absorbs)</td></tr>
+</table>
+<p class="note">OTR equations (\(P_{avg}=2.13\ atm\)):</p>
+<div class="eq">
+\[ \dot n_{CO}=1000\cdot k_La_{CO}\cdot k_{H,CO}\cdot P\cdot y_{CO}=345.1\,y_{CO} \]
+\[ \dot n_{H_2}=1000\cdot k_La_{H_2}\cdot k_{H,H_2}\cdot P\cdot y_{H_2}=421.7\,y_{H_2} \]
+\[ \dot n_{CO_2,feed}=536\,y_{CO_2} \quad(\text{feed-limited, not transfer-limited}) \]
+</div>
+<p class="note">Solve for mole fractions hitting the 3:2:1 delivered ratio, with inerts fixed at 5% (typical gasifier N₂ carryover):</p>
+<div class="eq">\[ y_{CO}=1.834\,y_{H_2}, \qquad y_{CO_2}=0.215\,y_{CO} \]</div>
+<div class="eq">\[ \boxed{y_{CO}=54\%,\quad y_{H_2}=29\%,\quad y_{CO_2}=12\%,\quad y_{N_2}=5\%} \]</div>
+<table>
+<tr><th>Gas</th><th>Feed (mol/hr)</th><th>Delivered (mol/hr)</th><th>Utilization</th><th>Ratio check</th></tr>
+<tr><td>CO</td><td>289</td><td>186</td><td>64%</td><td>3.0</td></tr>
+<tr><td>H₂</td><td>158</td><td>124</td><td>79%</td><td>2.0</td></tr>
+<tr><td>CO₂</td><td>64</td><td>62 (~100% absorbed)</td><td>~100%</td><td>1.0</td></tr>
+</table>
+<p class="note">Delivered ratio = 3.0 : 2.0 : 1.0 — matches target exactly. Explicit caveat: this composition fixes the <em>ratio</em>, not the <em>efficiency</em> — CO utilization is still only 64% (raising \(k_La\)/pressure or recycling off-gas is still required to raise throughput).</p>
+</div>
+</div>
+
+<!-- ================= DR. CURTIS ================= -->
+<div class="modelblock" id="curtis-block">
+<div class="modelhead curtis-h">Dr. Curtis's Attempt <span class="tag">instructor trial run — AI engine used not named in source (UI matches Copilot); annotations are the professor's own critique, preserved verbatim in intent</span></div>
+<div class="modelbody">
+
+<div class="prof"><strong>Framing note (from the assignment source document):</strong> "Aside from reading the details of what AI is capable of (including significant mistakes), it would be very useful for you to go through your own process of entering these queries to see if you get the same results that I did... I would very much like to know if YOUR answers are different from mine." This trial is reproduced with Dr. Curtis's own running commentary intact, since the commentary is itself the pedagogical point.</div>
+
+<div class="prompt"><span class="tag">a</span>Generate the stoichiometry for syngas fermentation to ethanol.</div>
+<p class="note">1. Ethanol from CO (Wood–Ljungdahl):</p>
+<div class="eq">\[ 6CO + 3H_2O \rightarrow C_2H_5OH + 4CO_2 \]</div>
+<p class="note">2. Ethanol from \(CO_2\) and \(H_2\):</p>
+<div class="eq">\[ 2CO_2 + 6H_2 \rightarrow C_2H_5OH + 3H_2O \]</div>
+<p class="note">3. Ethanol from syngas (CO + \(H_2\) together):</p>
+<div class="eq">\[ 2CO + 4H_2 \rightarrow C_2H_5OH + H_2O \]</div>
+<p class="note">Electron-balance framing (12 reducing equivalents per mole ethanol):</p>
+<div class="eq">\[ 2CO_2 + 12e^- + 12H^+ \rightarrow C_2H_5OH + 3H_2O \]</div>
+<p class="note">— 6 mol \(H_2\) supply the 12 e⁻ (2 e⁻ per \(H_2\)); CO can act as both carbon source and electron donor since oxidizing part of the CO to \(CO_2\) generates reducing equivalents.</p>
+<p class="note">Biomass-inclusive general form (\(CH_{1.8}O_{0.5}N_{0.2}\) as biomass):</p>
+<div class="eq">\[ a\,CO + b\,H_2 + c\,CO_2 + d\,NH_3 \rightarrow e\,C_2H_5OH + f\,CH_{1.8}O_{0.5}N_{0.2} + g\,H_2O + h\,CO_2 \]</div>
+<p class="note">Boxed "standard" engineering forms offered for mass balances / \(k_La\) work:</p>
+<div class="eq">\[ \boxed{6CO + 3H_2O \rightarrow C_2H_5OH + 4CO_2} \qquad \boxed{2CO + 4H_2 \rightarrow C_2H_5OH + H_2O} \]</div>
+<div class="prof"><strong>Dr. Curtis's critique:</strong> "These stoichiometric answers are a trivial balance of making ethanol, and do not reflect the process of a living organism that needs to also have energy for growth. The balancing is avoiding CO and \(H_2\) together, which is the reality of a syngas substrate — this seems like a simplification with regard to otherwise insufficiently defined stoichiometric coefficients."</div>
+
+<div class="prompt"><span class="tag">b</span>Add biomass and acetate yields</div>
+<p class="note">General CO-fed stoichiometry with biomass \(X\equiv CH_{1.8}O_{0.5}N_{0.2}\):</p>
+<div class="eq">\[ a\,CO + b\,H_2O + d\,NH_3 \rightarrow e\,C_2H_5OH + f\,CH_3COOH + g\,X + h\,CO_2 \]</div>
+<p class="note">Closure balances:</p>
+<div class="eq">
+\[ C:\ a = 2e+2f+g+h \qquad N:\ d = 0.2g \]
+\[ H:\ 2b+3d = 6e+4f+1.8g \qquad O:\ a+b = e+2f+0.5g+2h \]
+</div>
+<p class="note">Combining gives:</p>
+<div class="eq">\[ h = 4e+2f-0.6g \qquad a = 6e+4f+0.4g \qquad b = 3e+2f+0.2g \]</div>
+<p class="note"><strong>Example using representative industrial yields</strong> (80% C→EtOH, 10% C→acetate, 10% C→biomass; basis 100 mol C consumed → \(e=40,\,f=5,\,g=10\)):</p>
+<div class="eq">\[ 100\,CO + 51\,H_2O + 2\,NH_3 \rightarrow 40\,C_2H_5OH + 5\,CH_3COOH + 10\,CH_{1.8}O_{0.5}N_{0.2} + 169\,CO_2 \]</div>
+<p class="note">Normalized to 1 mol ethanol:</p>
+<div class="eq">\[ \boxed{2.50\,CO + 1.28\,H_2O + 0.05\,NH_3 \rightarrow 1\,EtOH + 0.125\,Acetate + 0.25\,Biomass\,(C\text{-}mol) + 4.23\,CO_2} \]</div>
+<p class="note">Literature biomass yield cited: \(Y_X\approx0.02\text{–}0.08\ g\,g^{-1}\,CO\) consumed. "Practical" reactor-modeling stoichiometry offered separately:</p>
+<div class="eq">\[ \boxed{24\,CO + 12\,H_2O + 0.5\,NH_3 \rightarrow 4\,C_2H_5OH + CH_{1.8}O_{0.5}N_{0.2} + 15.4\,CO_2} \]</div>
+<div class="prof"><strong>Dr. Curtis's critique:</strong> "This increase in 'complexity' really only accounts for the making of biomass in terms of a mass balance, not metabolic efficiency. AI abandoned the treatment of \(H_2\) gas to make the answer more tractable. Keeping in mind that YIELD is a powerful constraint for determining how much 'energy' is used to make biomass, this additional constraint is critical to a functional stoichiometry — and notably, <strong>AI recognized this YIELD constraint and ran an example with "industrial yields" without being prompted to do so.</strong>" He also notes: dividing the 24‑CO reaction by 4 to compare molar bases shows it needs much more CO (6) and \(H_2O\) (2) per mole ethanol than the industrial‑yield case — and "the primary inadequacy of this answer is still the lack of treatment for \(H_2\); \(H_2\) is very energetic relative to \(H_2O\), so while the mass balances 'work,' this is not addressing the energetics of the reaction."</div>
+
+<div class="prompt"><span class="tag">c</span>What syngas composition will provide the balanced mass transfer to satisfy this stoichiometry?</div>
+<p class="note">Using \(24CO+12H_2O+0.5NH_3\rightarrow4EtOH+Biomass+15.4CO_2\): "no \(H_2\) requirement" at all — ideal feed \(y_{CO}\approx100\%\), with \(CO_2\) produced rather than consumed.</p>
+<p class="note">Maximum carbon-efficiency case (fully reduced ethanol stoichiometry):</p>
+<div class="eq">\[ 2CO+4H_2\rightarrow EtOH+H_2O \qquad \frac{H_2}{CO}=2 \ \Rightarrow\ y_{CO}=33.3\%,\ y_{H_2}=66.7\% \]</div>
+<p class="note">Including acetate formation (80% EtOH / 10% acetate / 10% biomass carbon split), a degree-of-reduction analysis gives:</p>
+<div class="eq">\[ \frac{H_2}{CO}\approx0.15\text{–}0.20 \ \Rightarrow\ CO=83\text{–}87\%,\ H_2=13\text{–}17\% \]</div>
+<p class="note">"What real reactors actually need" — cites that \(k_La(H_2)\) is "much lower" than \(k_La(CO)\), lower \(H_2\) solubility, and frequent \(H_2\)-transfer limitation, recommending \(H_2/CO=1\text{–}2\) instead:</p>
+<table>
+<tr><th>Feed</th><th>CO (%)</th><th>H₂ (%)</th></tr>
+<tr><td>Carbon-balanced</td><td>75</td><td>25</td></tr>
+<tr><td>Electron-balanced</td><td>50</td><td>50</td></tr>
+<tr><td>High ethanol yield</td><td>33</td><td>67</td></tr>
+</table>
+<div class="prof"><strong>Dr. Curtis's critique:</strong> "In introducing mass transfer, the \(H_2\) reducing power came back into the picture — CO is the only carbon source, so \(CO_2\) is now produced to balance biomass production (an improvement, but not really considering energetics). We are trying to get to mass transfer rates of CO, \(H_2\), \(CO_2\) that ultimately balance organism metabolism as well as ethanol formation." Separately, flagged in red: <strong>"out of the blue, we are suddenly dealing with \(k_La\), and the statement is made that \(k_La\) for \(H_2\) is LOWER than for CO. This clearly seems problematic, since boundary-layer mass transfer is strongly dependent on diffusion... and \(H_2\) clearly has faster diffusion than CO???"</strong> — and notes the response has "largely abandoned stoichiometry for empirical findings of typical conditions."</div>
+
+<div class="prompt"><span class="tag">d</span>Reactor 15 psig: \(k_La(CO)=200\ hr^{-1}\); V = 1000 L; AR = 3:1; Q = 200 L/min</div>
+<p class="note">Residence time: \(\tau_g = 1000/200 = 5\ min\). Step 1 — max CO transfer capacity, assuming dissolved CO ≈ 0:</p>
+<div class="eq">\[ OTR_{CO}=k_La\cdot C^*_{CO}\approx 200(0.75\,y_{CO}) = 150\,y_{CO}\ \tfrac{mmol}{L\cdot hr} \]</div>
+<p class="note">Step 2 — gas feed capacity (standard molar volume basis, \(12000\ L/hr \div 24.5\)):</p>
+<div class="eq">\[ \dot n_{total}\approx 490\ mol/hr \]</div>
+<table>
+<tr><th>Feed composition</th><th>CO feed</th></tr>
+<tr><td>50% CO</td><td>245 mol/h</td></tr>
+<tr><td>70% CO</td><td>343 mol/h</td></tr>
+<tr><td>90% CO</td><td>441 mol/h</td></tr>
+</table>
+<p class="note">Since transfer capacity (75–135 mol/h) ≪ feed CO (245–441 mol/h) → <strong>mass-transfer limited, not gas-supply limited.</strong> Step 3 — ethanol via \(6CO\rightarrow EtOH+4CO_2\), at 70% CO feed (\(N_{CO}\approx105\ mol/h\)):</p>
+<div class="eq">\[ r_{EtOH}=\frac{N_{CO}}{6}=17.5\ mol/h = 0.81\ kg/h \approx 19\ kg/day \]</div>
+<p class="note">Step 4 — \(H_2\) transfer, stated as \(k_La(H_2)\approx0.7\,k_La(CO)=140\ hr^{-1}\); concludes \(H_2\) is "usually the bottleneck" due to lower solubility, lower driving force, higher reducing-equivalent demand; at stoichiometric \(CO:H_2=1:0.33\), "the culture generally becomes \(H_2\)-limited."</p>
+<p class="note">Step 5 — feed composition for balanced uptake, target uptake \(H_2/CO=0.3\), inflated to feed ratio \(0.8\text{–}1.2\) "accounting for poorer \(H_2\) transfer":</p>
+<div class="eq">\[ \boxed{45\%\,CO+45\%\,H_2+10\%\,CO_2} \]</div>
+<p class="note"><strong>Initial recommendation offered:</strong> \(CO=45\text{–}50\%,\ H_2=40\text{–}45\%,\ CO_2=5\text{–}10\%\).</p>
+<div class="prof"><strong>Dr. Curtis's critique:</strong> "Note to assume high CO > Ethanol is based on having adequate \(H_2\)... so it has to keep going with this logic." And on the recommendation: <strong>"This sure feels like a student trying to wiggle towards getting extra credit!!!"</strong> — prompting him to directly challenge the model.</div>
+
+<div class="prompt"><span class="tag">d·2</span>Why is the hydrogen kLa smaller than CO kLa when diffusion rate of H₂ is faster than CO?</div>
+<p class="note">Model response: "\(H_2\) does not always have a lower \(k_La\) than CO — the confusion comes from separating \(k_L\), interfacial area \(a\), and solubility \(C^*\)." Diffusivity comparison:</p>
+<div class="eq">\[ D_{H_2}\approx4.5\times10^{-9}\ m^2/s, \qquad D_{CO}\approx2.2\times10^{-9}\ m^2/s \]</div>
+<div class="eq">\[ k_L\propto D^n,\ n\approx0.5\text{–}0.7 \ \Rightarrow\ k_{L,H_2}\approx(4.5/2.2)^{0.5}\approx1.4\times k_{L,CO} \]</div>
+<p class="note">"So on diffusivity grounds alone, \(H_2\) transfers faster." Then rationalizes the earlier "lower" claim via solubility: \(H_{CO}\approx1\times10^{-5}\), \(H_{H_2}\approx7\times10^{-6}\ mol/L\cdot atm\) → at 2 atm, 50% gas, \(C^*_{CO}\approx10\ mM\) vs. \(C^*_{H_2}\approx7\ mM\); argues metabolic demand (\(2CO+4H_2\rightarrow EtOH+H_2O\), 2× molar \(H_2\) demand) is the "larger effect," without ever directly answering whether \(k_La(H_2)>k_La(CO)\).</p>
+<div class="prof"><strong>Dr. Curtis's critique:</strong> "This is a lot of hand-waving around trying to rationalize why \(H_2\) is limited, but did not address the direct question of if \(k_La(H_2)>k_La(CO)\). It did do a good job of reiterating the concepts of solubility and driving force... but..." He then revises its own \(k_La(CO)=200\ hr^{-1}\) basis forward with penetration theory:</p>
+<div class="eq">\[ k_La(H_2)\approx200\sqrt{4.5/2.2}\approx286\ hr^{-1} \quad\Rightarrow\quad \boxed{k_La(H_2)\approx250\text{–}300\ hr^{-1}} \]</div>
+<p class="note">— i.e. <em>larger</em>, not smaller, than \(k_La(CO)\), reversing the earlier claim.</p>
+
+<div class="prompt"><span class="tag">d·2 (cont.)</span>Above you stated \(k_La(H_2)\approx0.7\,k_La(CO)\) — how do you account for this difference?</div>
+<p class="note">Model directly concedes the contradiction: "You're right to call out the inconsistency. The statement \(k_La(H_2)\approx0.7\,k_La(CO)\) and the later estimate \(k_La(H_2)\approx1.4\,k_La(CO)\) cannot both be true for the same reactor under the same definition of \(k_La\)." Re-derives from theory (bubble-hydrodynamics area assumed equal, \(a_{H_2}\approx a_{CO}\)):</p>
+<div class="eq">\[ k_L\propto D^{1/2}\ (\text{penetration}) \quad\text{or}\quad k_L\propto D^{2/3}\ (\text{film}) \qquad \frac{k_{L,H_2}}{k_{L,CO}}\approx\left(\frac{4.5}{2.2}\right)^{1/2}\approx1.43 \]</div>
+<p class="note">Attributes the original "0.7×" figure to <em>fitted/apparent</em> \(k_La\) values back-calculated from biological uptake data in the literature (which bundle in CO inhibition of hydrogenases, changing gas composition along bubble paths, and model-fitting error) — i.e. \(k_{La,\text{apparent}}\neq k_{La,\text{physical}}\). Final stated position:</p>
+<div class="eq">\[ \boxed{k_La(H_2)\approx 250\text{–}300\ hr^{-1}}\ \ (\text{use this for design; } 1.3\text{–}1.5\times k_La(CO)) \]</div>
+<div class="prof"><strong>Dr. Curtis's critique:</strong> "So we have managed to get AI to correct the \(k_La\). However, based on the arguments of having used experimental data for the relationship, it certainly makes me nervous that these are a factor of 2× different!" (i.e., the model's own "fitted" 0.7× vs. "theoretical" 1.4× figures disagree by roughly 2×, and it is not obvious which — if either — is trustworthy for design.)</div>
+
+<div class="prompt"><span class="tag">e</span>Design a gas composition using these values</div>
+<p class="note">Using the corrected \(k_La(CO)=200\ hr^{-1}\), \(k_La(H_2)\approx280\ hr^{-1}\). Target stoichiometry (high-ethanol + biomass case):</p>
+<div class="eq">\[ 24CO+8H_2+0.5NH_3\rightarrow4EtOH+Biomass+7.4CO_2 \qquad \left(\frac{H_2}{CO}\right)_{uptake}=\frac{8}{24}=0.33 \]</div>
+<p class="note">Transfer-capacity equations (\(N_i=k_La_i\,C_i^*\,V\), \(C_i^*=H_i\,P_i\); Henry's constants \(C^*_{CO}\approx10\,y_{CO}\ mM\), \(C^*_{H_2}\approx7\,y_{H_2}\ mM\)) matched to the 0.33 uptake ratio:</p>
+<div class="eq">\[ \frac{N_{H_2}}{N_{CO}}=\frac{1.96\,y_{H_2}}{2.0\,y_{CO}}=0.33 \ \Rightarrow\ y_{H_2}=0.34\,y_{CO} \]</div>
+<p class="note">With 10% \(CO_2\) added (Wood–Ljungdahl methyl/carbonyl branch balance):</p>
+<div class="eq">\[ \boxed{y_{CO}=67\%,\quad y_{H_2}=23\%,\quad y_{CO_2}=10\%} \]</div>
+<p class="note">"If maximum ethanol selectivity is the goal," an alternative oversupplied-reductant feed is also offered:</p>
+<div class="eq">\[ \boxed{50\%\,CO,\ 40\%\,H_2,\ 10\%\,CO_2} \]</div>
+<p class="note"><strong>Final recommendation (stated range + nominal point), for the 1000-L, 15 psig, 200 L/min reactor with \(k_La(CO)=200\ hr^{-1}\), \(k_La(H_2)\approx280\ hr^{-1}\):</strong></p>
+<div class="eq">\[ CO=60\text{–}70\%,\quad H_2=20\text{–}30\%,\quad CO_2=10\% \]</div>
+<div class="eq">\[ \boxed{\textbf{Nominal design point: } 67\%\,CO,\ 23\%\,H_2,\ 10\%\,CO_2} \]</div>
+<p class="note">— stated as "the closest match to the transfer-limited stoichiometric demand," while \(50\%\,CO/40\%\,H_2/10\%\,CO_2\) is offered as the composition to "test first" for maximum ethanol titer / minimum acetate.</p>
+<div class="prof"><strong>Dr. Curtis's critique:</strong> "It adds in numerous 'observations' of how things work which it is clearly extracting from the discussion online about this problem. Keep in mind that syngas generation is a thermochemical process, so we do not have the ability to simply dial in a gas composition. A critical aspect of syngas fermentation is avoiding air (use steam) so you can minimize the inert gases that decrease mass transfer rates. I also find it interesting that AI is trained to address ambiguity by giving a range of answers..." Final observation: <strong>"AI 'remembered' that the point of this exercise was to try to match the mass transfer of gases with the stoichiometry of demand."</strong></div>
+
+</div>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- PART 2 -->
+<!-- ============================================================ -->
+<section class="page" id="p2">
+<h2 class="section-title">Part 2 — Master Value Chart, Disparities &amp; Branch Points</h2>
+
+<div class="legend">
+  <span><span class="swatch" style="background:var(--diverge);border:1px solid var(--divergeBorder);"></span>Models materially disagree / used different assumptions</span>
+  <span><span class="swatch" style="background:var(--warn);border:1px solid var(--warnBorder);"></span>Model flagged its own number as provisional / inconsistent</span>
+</div>
+
+<h3 class="sub">2.1 Core stoichiometric reactions (all 5 trials)</h3>
+<table>
+<tr><th>Reaction</th><th>Gemini</th><th>Copilot</th><th>GPT</th><th>Claude</th><th>Dr. Curtis</th></tr>
+<tr><td>Ethanol from CO</td><td colspan="5" style="text-align:center;">\(6CO+3H_2O\rightarrow C_2H_5OH+4CO_2\) — <strong>identical across all five trials</strong></td></tr>
+<tr><td>Ethanol from CO₂/H₂</td><td>\(6H_2+2CO_2\rightarrow C_2H_5OH+3H_2O\)</td><td>\(2CO_2+6H_2\rightarrow C_2H_5OH+3H_2O\)</td><td>\(2CO_2+6H_2\rightarrow C_2H_5OH+3H_2O\)</td><td>\(6H_2+2CO_2\rightarrow C_2H_5OH+3H_2O\)</td><td>\(2CO_2+6H_2\rightarrow C_2H_5OH+3H_2O\)</td></tr>
+<tr class="diverge"><td>Combined CO+H₂ route</td><td style="color:#999;">not given</td><td>\(2CO+4H_2\rightarrow C_2H_5OH+H_2O\)</td><td>\(2CO+4H_2\rightarrow C_2H_5OH+H_2O\)</td><td style="color:#999;">not given (uses weighted blend instead)</td><td>\(2CO+4H_2\rightarrow C_2H_5OH+H_2O\)</td></tr>
+<tr><td>Acetate from CO</td><td colspan="5" style="text-align:center;">\(4CO+2H_2O\rightarrow CH_3COOH+2CO_2\) — identical across all five</td></tr>
+<tr><td>Acetate from CO₂/H₂</td><td colspan="5" style="text-align:center;">\(2CO_2+4H_2\rightarrow CH_3COOH+2H_2O\) — identical across all five</td></tr>
+<tr><td>Biomass formula</td><td colspan="5" style="text-align:center;">\(CH_{1.8}O_{0.5}N_{0.2}\) — identical across all five (Claude adds MW ≈ 24.6 g/mol)</td></tr>
+</table>
+<p class="note"><strong>Takeaway:</strong> the base chemistry (Wood–Ljungdahl stoichiometry) is essentially <em>identical</em> across all five trials — this is well-established literature chemistry. Divergence begins once each trial must <em>choose numeric yield splits</em> and <em>translate stoichiometry into an engineered gas composition</em>. Dr. Curtis's trial tracks the Copilot/GPT "combined route" family almost line-for-line in prompt (a), which is itself a data point (see 2.7).</p>
+
+<h3 class="sub">2.2 Reactor physical/engineering basis (prompt d — should be identical, since inputs were identical)</h3>
+<table>
+<tr><th>Parameter</th><th>Gemini</th><th>Copilot</th><th>GPT</th><th>Claude</th><th>Dr. Curtis</th></tr>
+<tr><td>Vessel diameter \(D\)</td><td>0.75 m</td><td>0.752 m</td><td>0.75 m</td><td>0.753 m</td><td>— (not stated)</td></tr>
+<tr><td>Liquid height \(H\)</td><td>2.26 m</td><td>2.26 m</td><td>2.25 m</td><td>2.26 m</td><td>— (not stated)</td></tr>
+<tr><td>Cross-section \(A\)</td><td>0.444 m²</td><td>0.444 m²</td><td>— (not stated)</td><td>0.445 m²</td><td>— (not stated)</td></tr>
+<tr><td>Absolute pressure</td><td>2.02 atm</td><td>2.02 atm</td><td>2.02 atm</td><td>2.02 atm (headspace); <strong>2.13 atm average</strong> incl. hydrostatic head</td><td>2.02 atm (used only implicitly; \(C^*_{CO}\approx0.75\,y_{CO}\) baked in)</td></tr>
+<tr class="diverge"><td>Total molar gas feed (200 L/min)</td><td><strong>566 mol/hr</strong> (stated, undocumented basis)</td><td><strong>960 mol/hr</strong> (via \(PV/RT\) at 2.02 atm, 308 K)</td><td><strong>975 mol/hr</strong> (16.25 mol/min via same real-gas approach)</td><td><strong>536 mol/hr</strong> (via standard molar volume 22.4 L/mol — ignores actual 2.02 atm pressure)</td><td><strong>490 mol/hr</strong> (\(12000\,L/hr\div24.5\) — standard-conditions-style basis, closest to Claude's camp)</td></tr>
+<tr><td>Superficial gas velocity</td><td>0.0075 m/s</td><td>— (not stated)</td><td>0.0075 m/s</td><td>— (not explicitly stated)</td><td>— (not stated; only residence time \(\tau_g=5\ min\) given)</td></tr>
+</table>
+<div class="callout red">
+<strong>Major branch point — total gas flow basis:</strong> given the <em>identical</em> input (200 L/min, 15 psig, ~1000 L reactor), the five trials split into two camps:
+<ul>
+<li><strong>Copilot &amp; GPT</strong> (960 / 975 mol/hr): applied the ideal gas law \(n=PV/RT\) using the <em>actual</em> absolute pressure (2.02 atm) and reactor temperature (~308–303 K). This is the technically correct approach if "200 L/min" is an actual flow at reactor conditions.</li>
+<li><strong>Gemini, Claude &amp; Dr. Curtis's trial</strong> (566 / 536 / 490 mol/hr): all land near the value you get from <em>standard</em> molar volume (≈22.4–24.5 L/mol, i.e., a 0 °C–25 °C/1 atm-style basis) applied to 200 L/min, ignoring the actual 2.02 atm — Claude and Dr. Curtis's trial both show this math explicitly; Gemini's 566 mol/hr appears to use a similar standard-conditions assumption but without showing the derivation.</li>
+</ul>
+This ~1.8–2× discrepancy in total feed propagates directly into every downstream "utilization %" number (Section 2.4) — it is the single largest source of disagreement in the whole comparison, and none of the five trials flagged it as a point of inter-model conflict (only GPT flagged the actual-vs-reference-L/min ambiguity <em>internally</em>, as a caveat on its own number; Dr. Curtis's own annotations flag several other issues but not this specific unit basis).
+</div>
+
+<h3 class="sub">2.3 Hydrogen mass-transfer coefficient \(k_La_{H_2}\) (the "d·2" follow-up)</h3>
+<table>
+<tr><th>Model</th><th>\(k_La_{H_2}\) reported</th><th>Derivation</th><th>Status</th></tr>
+<tr><td>Gemini</td><td>316.2 hr⁻¹</td><td>\(k_La_{H_2}/k_La_{CO}=\sqrt{D_{H_2}/D_{CO}}=\sqrt{2.5}=1.58\)</td><td>Calculated, presented as a firm number</td></tr>
+<tr><td>Copilot</td><td>316.2 hr⁻¹</td><td>Same formula/ratio as Gemini (identical downstream reactor numbers: 134 mol/hr CO, 960 mol/hr, etc. — Copilot's thread tracks Gemini's physical-chemistry assumptions closely)</td><td>Calculated, presented as a firm number</td></tr>
+<tr><td>GPT</td><td class="warnrow">320 hr⁻¹</td><td>Not derived from a shown diffusion ratio — explicitly labeled</td><td class="warnrow"><strong>"assumed, not measured"</strong></td></tr>
+<tr><td>Claude</td><td>≈300–310 hr⁻¹</td><td>\(\sqrt{D_{H_2}/D_{CO}}\approx\sqrt{2.4}=1.55\)</td><td>Calculated, consistent with Gemini/Copilot</td></tr>
+<tr class="diverge"><td>Dr. Curtis's trial</td><td class="warnrow">first stated <strong>140 hr⁻¹</strong> (\(0.7\times k_La_{CO}\)); after being directly challenged, revised to <strong>250–300 hr⁻¹</strong> (\(\approx1.4\times\))</td><td>Initial figure cited as an "experimental/empirical" ratio with no shown source; revised figure uses the same \(\sqrt{D_{H_2}/D_{CO}}\) penetration-theory derivation as Gemini/Copilot/Claude</td><td class="warnrow"><strong>Self-contradicted, then corrected only after the user explicitly flagged the inconsistency</strong> — never happened spontaneously, unlike GPT's self-audit</td></tr>
+</table>
+<p class="note">All five trials <strong>converge, eventually</strong>, on \(k_La_{H_2} > k_La_{CO}\) by roughly 1.4–1.6×, because \(k_L\propto D^{0.5}\) and H₂ diffuses ~2.4–2.5× faster than CO. GPT is the outlier in <em>epistemic honesty</em> here — it explicitly refuses to treat \(k_La_{H_2}\) as known, repeatedly flagging it as an assumption, while Gemini/Copilot/Claude present a specific derived value with more confidence. <strong>Dr. Curtis's trial is the one case where a model asserted the physically backwards relationship (\(k_La_{H_2}<k_La_{CO}\)) outright</strong>, with no caveat, and only reversed itself under direct user pressure — his own annotation calls this "a student trying to wiggle towards getting extra credit," and after the correction he notes the 0.7× vs. 1.4× figures still disagree by a factor of ~2×, which should undermine confidence in whichever number gets used downstream.</p>
+
+<h3 class="sub">2.4 CO transfer capacity &amp; utilization — where early Henry's-constant assumptions diverge</h3>
+<table>
+<tr><th>Model</th><th>Assumed CO solubility / \(C^*\) basis</th><th>CO transfer capacity</th><th>CO utilization %</th></tr>
+<tr class="diverge"><td>Gemini</td><td>\(C^*_{CO}\approx0.56\ mol/m^3\) at 35% CO, 2.02 atm (implied \(H\approx0.79\ mmol\,L^{-1}atm^{-1}\))</td><td>≈112 mol/hr (initial calc, prompt d)</td><td>not explicitly computed in prompt d</td></tr>
+<tr class="diverge"><td>Copilot</td><td>\(C^*_{CO}\approx0.95\ mmol\,L^{-1}atm^{-1}\)</td><td>134 mol/hr</td><td>44% (vs. 307 mol/hr feed, 32% CO)</td></tr>
+<tr><td>GPT</td><td>Illustrative \(1.00\ mmol\,L^{-1}atm^{-1}\)</td><td>154 mol/hr (2.56 mol/min)</td><td>41.5% (vs. 6.17 mol/min feed, 38% CO)</td></tr>
+<tr><td>Claude</td><td>Henry's constant \(k_H=8.1\times10^{-4}\ mol\,L^{-1}atm^{-1}\) (37 °C table)</td><td>155 mol/hr</td><td>64% (vs. 241 mol/hr feed, 45% CO)</td></tr>
+<tr><td>Dr. Curtis's trial</td><td>\(C^*_{CO}\approx0.75\,y_{CO}\ mmol/L\) (unitless-looking shortcut, same order as Gemini's)</td><td>75–135 mol/hr across the 50–90% CO range tested (≈105 mol/hr at the 70% CO case used for the ethanol estimate)</td><td>not explicitly computed as a % — only stated qualitatively as "mass-transfer limited, not gas-supply limited" since capacity ≪ feed CO (245–441 mol/hr)</td></tr>
+</table>
+<p class="note">Note Claude's 64% utilization looks far more favorable than Copilot/GPT's ~41–44% — but this is mostly an artifact of Claude's low total-feed-gas basis (536 mol/hr, Section 2.2) rather than a real performance difference; on a like-for-like total-flow basis all five trials cluster near 40–45% CO utilization at this \(k_La\). Dr. Curtis's trial never states a numeric utilization %, which his own critique does not flag, but it follows from his low 490 mol/hr total-feed basis (same camp as Gemini/Claude) that it would land in the same 40–45% neighborhood if computed consistently.</p>
+
+<h3 class="sub">2.5 FINAL designed gas composition (answer to prompt "e") — the biggest branch point</h3>
+<table>
+<tr><th>Model</th><th>CO</th><th>H₂</th><th>CO₂</th><th>Inerts</th><th>\(H_2:CO\)</th><th>Design logic</th></tr>
+<tr class="diverge"><td><strong>Gemini</strong></td><td><strong>45%</strong></td><td>32%</td><td>18%</td><td>5%</td><td>0.71</td><td>Back-solved <strong>feed</strong> partial pressures so <em>delivered (liquid-phase) molar rate</em> is ≈1:1 H₂:CO, compensating for H₂'s higher \(k_La\) by raising CO's partial pressure</td></tr>
+<tr class="diverge"><td><strong>Copilot</strong></td><td>32%</td><td><strong>58%</strong></td><td>10%</td><td>—</td><td>1.81</td><td>Set <strong>feed</strong> ratio directly equal to the desired consumption ratio (\(H_2/CO\approx1.8\)) — does not invert for the kLa/solubility differential</td></tr>
+<tr class="diverge"><td><strong>GPT</strong></td><td>38%</td><td><strong>62%</strong></td><td>0%</td><td>—</td><td>1.63 (feed); 1.80 (uptake target)</td><td>Same logic family as Copilot — feed ratio set close to desired consumed-gas ratio; explicitly labeled "provisional," then self-corrected its arithmetic</td></tr>
+<tr class="diverge"><td><strong>Claude</strong></td><td><strong>54%</strong></td><td>29%</td><td>12%</td><td>5%</td><td>0.54</td><td>Same inversion logic as Gemini — solved feed mole fractions so the <em>delivered</em> CO:H₂:CO₂ ratio hits a target (3:2:1), raising CO% above H₂% to compensate for CO's lower \(k_La\)</td></tr>
+<tr class="diverge"><td><strong>Dr. Curtis's trial</strong></td><td><strong>67%</strong> (nominal; range 60–70%)</td><td>23% (range 20–30%)</td><td>10%</td><td>—</td><td>0.34</td><td>Same inversion family as Gemini/Claude — matched <em>uptake</em> ratio \(H_2/CO=0.33\) using corrected \(k_La_{H_2}\approx280\ hr^{-1}\) vs. \(k_La_{CO}=200\ hr^{-1}\); but also separately offered a 50/40/10 "oversupplied reductant" alternative for max ethanol selectivity, functionally splitting the difference toward the other camp</td></tr>
+</table>
+
+<div class="callout">
+<strong>Where exactly the five trials branch:</strong>
+<ol>
+<li><strong>Three-vs-two split on design logic (Dr. Curtis's trial joins the "invert for kLa" camp after correction):</strong>
+  <ul>
+  <li><em>Gemini, Claude &amp; Dr. Curtis's trial</em> treat the problem as: "the gas that transfers more easily (H₂) needs a <u>lower</u> feed fraction, and the gas that transfers poorly (CO) needs a <u>higher</u> feed fraction, to arrive at equal/target molar delivery into the liquid." This correctly uses \(OTR=k_La\cdot C^*\) (or \(k_La\cdot H\cdot P\)) as the real constraint. Result: <strong>CO-rich feeds</strong> (45–67% CO, 23–32% H₂). Dr. Curtis's trial only reaches this camp because he personally forced the correction of its backwards \(k_La(H_2)<k_La(CO)\) claim — left uncorrected, it would have reinforced an H₂-rich feed with the wrong physical justification.</li>
+  <li><em>Copilot &amp; GPT</em> treat the problem as: "the feed gas ratio should mirror the metabolic/stoichiometric uptake ratio (\(H_2/CO\approx1.7\text{–}1.8\))," without inverting for the differential mass-transfer rates. Result: <strong>H₂-rich feeds</strong> (58–62% H₂, 32–38% CO).</li>
+  </ul>
+</li>
+<li>This is a <strong>genuine, consequential disagreement</strong>, not just rounding noise — the two camps recommend opposite majority gases. Gemini, Claude, and (after correction) Dr. Curtis's trial give the more rigorous mass-transfer engineering answer (separating "what ratio the organism consumes" from "what feed ratio achieves that delivered ratio given unequal \(k_La\)/solubility"); Copilot and GPT's approach is simpler and matches common "rule of thumb" industrial ranges cited in literature (H₂/CO ≈ 1.5–2.0), but doesn't account for the reactor-specific mass-transfer asymmetry the prompt was explicitly probing.</li>
+<li><strong>Secondary branch — target delivered/consumed ratio itself:</strong> Gemini targeted a 1:1 H₂:CO liquid delivery ratio (tied to its own mixed-gas stoichiometric table from prompt c); Claude targeted a 3:2 (1.5:1) CO:H₂ delivered ratio (tied to its own CO-dominant 12:1 ethanol:acetate reaction from prompt b); Dr. Curtis's trial targeted a 1:0.33 uptake ratio (tied to its own 24-CO biomass reaction from prompt b). All three "invert for kLa" trials target <em>different</em> underlying consumption ratios, because each built a different product-distribution stoichiometry in step (b) — the inversion <em>logic</em> converges, but the specific numeric target does not.</li>
+<li><strong>GPT is the only trial to visibly self-audit unprompted</strong> — it produced a provisional composition/production number (3.05 kg/h ethanol), then caught and corrected an internal inconsistency in the same turn, landing on 2.83 kg/h, without the user pointing anything out. <strong>Dr. Curtis's trial is the mirror-image case:</strong> it also ends up self-correcting (the \(k_La(H_2)\) value), but only reactively, after Dr. Curtis explicitly caught and challenged the contradiction — on its own, the model never flagged that \(0.7\times\) and \(1.4\times\) couldn't both be true.</li>
+</ol>
+</div>
+
+<h3 class="sub">2.6 Final ethanol / acetate / biomass production rates</h3>
+<table>
+<tr><th>Model</th><th>Ethanol</th><th>Acetate</th><th>Biomass</th><th>Basis / CO utilization used</th></tr>
+<tr><td>Gemini</td><td>2.1–2.4 kg/(m³·hr) theoretical max</td><td>— (not separately quantified in final answer)</td><td>— (not separately quantified)</td><td>~56% CO conversion, off a 566 mol/hr total-feed figure</td></tr>
+<tr><td>Copilot</td><td><strong>0.8–1.0 kg/h</strong></td><td>0.15–0.25 kg/h</td><td>0.03–0.08 kg/h</td><td>44% CO utilization, 960 mol/hr feed</td></tr>
+<tr class="diverge"><td>GPT</td><td><strong>2.83 kg/h</strong> (1.02 mol/min)</td><td>0.205 mol/min</td><td>0.102 C-mol/min (~0.151 kg/h)</td><td>41.5% CO utilization, 975 mol/hr feed</td></tr>
+<tr class="diverge"><td>Claude</td><td><strong>594 g/hr = 14.3 kg/day</strong> (≈0.59 kg/h)</td><td>256 g/hr = 6.1 kg/day</td><td>— (not separately quantified)</td><td>64% CO utilization, 536 mol/hr feed</td></tr>
+<tr><td>Dr. Curtis's trial</td><td><strong>0.81 kg/h</strong> (17.5 mol/hr, ≈19 kg/day) — from the prompt-d intermediate calc at 70% CO feed; the final prompt-e composition (67% CO) was not re-run through an ethanol-rate estimate</td><td>— (not separately quantified)</td><td>— (not separately quantified)</td><td>CO-only stoichiometric anchor (\(6CO\rightarrow EtOH+4CO_2\)), 490 mol/hr feed</td></tr>
+</table>
+<p class="note"><strong>Disparity:</strong> final ethanol rate spans roughly <strong>0.6–2.9 kg/h</strong> across the five trials for the <em>same</em> physical reactor — nearly a 5× range. Dr. Curtis's trial (0.81 kg/h) lands close to Copilot's (0.8–1.0 kg/h) and Claude's (0.59 kg/h) despite using a different total-feed basis, total mass-transfer logic, and anchor reaction — a reminder that several of these numbers agreeing is partly coincidental, not a sign of convergent rigor. This spread traces back directly to (i) the total-gas-flow basis split (Section 2.2), (ii) differing assumed product-distribution yields (70–85% vs. ~80% vs. 1-mol-ethanol-only basis vs. ~76% carbon-to-ethanol vs. Dr. Curtis's trial's 100%-to-ethanol CO-only anchor), and (iii) whether CO alone or the CO+H₂ combined uptake was used as the rate-limiting stoichiometric anchor.</p>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- PART 3 -->
+<!-- ============================================================ -->
+<section class="page" id="p3">
+<h2 class="section-title">Part 3 — Final Answers Side-by-Side, With Reasoning Path</h2>
+<p class="note">"Final answer" = each model's response to the last prompt, <em>Design a gas composition using these values</em>, i.e. its complete recommended syngas feed for your 1000 L / 15 psig / 200 L/min / \(k_La_{CO}=200\ hr^{-1}\) reactor.</p>
+
+<div class="finalgrid">
+
+<div class="finalcard">
+<div class="fh gemini-h">Gemini</div>
+<div class="fb">
+<p><strong>Final feed:</strong></p>
+<div class="eq" style="margin:4px 0;">\[ 45\%\,CO,\ 32\%\,H_2,\ 18\%\,CO_2,\ 5\%\,\text{inert} \]</div>
+<p><strong>\(H_2:CO\) delivered ≈ 1.04:1</strong></p>
+<table>
+<tr><td>CO capacity</td><td>141.9 mol/hr</td></tr>
+<tr><td>H₂ capacity</td><td>147.2 mol/hr</td></tr>
+<tr><td>Max ethanol</td><td>2.1–2.4 kg/(m³·hr)</td></tr>
+<tr><td>CO conversion</td><td>~56%</td></tr>
+</table>
+<p class="small"><strong>Reasoning path:</strong> (1) built \(GTR_i=k_La_i\cdot H_i\cdot P_i\) for each gas; (2) computed \(k_La_{H_2}=316\ hr^{-1}\) via \(\sqrt{D_{H_2}/D_{CO}}\); (3) since H₂'s transfer capacity per atm (227.7) exceeds CO's (156.0), raised CO's partial pressure above H₂'s so <em>delivered</em> moles equalize 1:1 — hence CO% &gt; H₂% in the feed, the opposite of the naive consumption ratio.</p>
+</div>
+</div>
+
+<div class="finalcard">
+<div class="fh copilot-h">Copilot</div>
+<div class="fb">
+<p><strong>Final feed:</strong></p>
+<div class="eq" style="margin:4px 0;">\[ 32\%\,CO,\ 58\%\,H_2,\ 10\%\,CO_2 \]</div>
+<p><strong>\(H_2:CO\) = 1.81:1</strong></p>
+<table>
+<tr><td>CO feed rate</td><td>307 mol/hr</td></tr>
+<tr><td>H₂ feed rate</td><td>557 mol/hr</td></tr>
+<tr><td>Ethanol</td><td>0.8–1.0 kg/h</td></tr>
+<tr><td>CO utilization</td><td>44%</td></tr>
+</table>
+<p class="small"><strong>Reasoning path:</strong> (1) computed CO transfer ceiling 134 mol/hr from \(k_La\) and Henry's law; (2) multiplied by target consumption ratio \(H_2/CO\approx1.8\) (derived earlier from an electron-balance over an 0.8:0.2:0.05 EtOH:Ac:biomass split) to get required H₂ = 241 mol/hr; (3) added 10% CO₂ for carbon fixation; (4) normalized to mole %. Feed ratio mirrors the <em>consumption</em> ratio directly — not inverted for kLa.</p>
+</div>
+</div>
+
+<div class="finalcard">
+<div class="fh gpt-h">ChatGPT</div>
+<div class="fb">
+<p><strong>Final feed:</strong></p>
+<div class="eq" style="margin:4px 0;">\[ 38\%\,CO,\ 62\%\,H_2,\ 0\%\,CO_2\ \text{added} \]</div>
+<p><strong>\(H_2:CO\) feed = 1.63:1 (uptake target 1.80:1)</strong></p>
+<table>
+<tr><td>CO transfer ceiling</td><td>154 mol/hr</td></tr>
+<tr><td>H₂ transfer ceiling (assumed)</td><td>313 mol/hr</td></tr>
+<tr><td>Ethanol</td><td>2.83 kg/h (corrected)</td></tr>
+<tr><td>CO utilization</td><td>41.5%</td></tr>
+</table>
+<p class="small"><strong>Reasoning path:</strong> (1) derived required consumption ratio \(H_2/CO=1.80\) from an \(r=0.20,s=0.10\) yield assumption; (2) picked 38/62 as a trial feed (same family as Copilot — mirrors consumption ratio, not inverted); (3) estimated CO transfer ceiling from \(k_La=200\ hr^{-1}\); (4) <strong>assumed</strong> (did not measure/derive) \(k_La_{H_2}=320\ hr^{-1}\); (5) caught and corrected an internal arithmetic inconsistency between its first-pass and second-pass numbers.</p>
+</div>
+</div>
+
+<div class="finalcard">
+<div class="fh claude-h">Claude</div>
+<div class="fb">
+<p><strong>Final feed:</strong></p>
+<div class="eq" style="margin:4px 0;">\[ 54\%\,CO,\ 29\%\,H_2,\ 12\%\,CO_2,\ 5\%\,N_2 \]</div>
+<p><strong>CO:H₂:CO₂ delivered = 3:2:1</strong></p>
+<table>
+<tr><td>CO feed rate</td><td>289 mol/hr</td></tr>
+<tr><td>H₂ feed rate</td><td>158 mol/hr</td></tr>
+<tr><td>CO utilization</td><td>64%</td></tr>
+<tr><td>H₂ utilization</td><td>79%</td></tr>
+</table>
+<p class="small"><strong>Reasoning path:</strong> (1) classified each gas by limiting regime (CO/H₂ mass-transfer-limited, CO₂ feed-limited); (2) built explicit OTR equations \(\dot n_i = 1000\cdot k_La_i\cdot k_{H,i}\cdot P\cdot y_i\) per gas; (3) solved mole fractions so the <em>delivered</em> molar ratio hits a 3:2:1 target tied back to its own 12:1 CO-dominant ethanol:acetate stoichiometry; (4) explicitly caveats that this fixes the ratio, not the overall conversion efficiency.</p>
+</div>
+</div>
+
+<div class="finalcard">
+<div class="fh curtis-h">Dr. Curtis's Attempt</div>
+<div class="fb">
+<p><strong>Final feed (nominal):</strong></p>
+<div class="eq" style="margin:4px 0;">\[ 67\%\,CO,\ 23\%\,H_2,\ 10\%\,CO_2 \]</div>
+<p><strong>\(H_2:CO\) uptake target = 0.33:1</strong> (range offered: 60–70% CO / 20–30% H₂ / 10% CO₂; alt. 50/40/10 if max selectivity prioritized)</p>
+<table>
+<tr><td>\(k_La(CO)\)</td><td>200 hr⁻¹ (given)</td></tr>
+<tr><td>\(k_La(H_2)\)</td><td>≈280 hr⁻¹ (corrected)</td></tr>
+<tr><td>Ethanol (intermediate calc)</td><td>0.81 kg/h</td></tr>
+<tr><td>Status</td><td>Reached after user-forced correction</td></tr>
+</table>
+<p class="small"><strong>Reasoning path:</strong> (1) initially claimed \(k_La(H_2)=0.7\times k_La(CO)=140\ hr^{-1}\), with no shown derivation, and used this to argue H₂ is the bottleneck; (2) built a 45/45/10 "balanced" feed on that flawed premise, prompting Dr. Curtis's "student trying to wiggle for extra credit" remark; (3) when directly challenged on the diffusivity contradiction, conceded the error and re-derived \(k_La(H_2)\approx250\text{–}300\ hr^{-1}\) via penetration theory — <em>reversing</em> which gas is the better transporter; (4) only then re-solved the uptake-matched feed (\(H_2/CO=0.33\)) to land on 67% CO / 23% H₂ / 10% CO₂. Dr. Curtis's own annotation: the model "remembered that the point of this exercise was to try to match the mass transfer of gases with the stoichiometry of demand" — but only after his intervention.</p>
+</div>
+</div>
+
+</div>
+
+<h3 class="sub">Bottom-line comparison</h3>
+<div class="bigbox">
+<table>
+<tr><th>Model</th><th>Majority gas</th><th>Final composition</th><th>Confidence/caveats stated</th></tr>
+<tr><td>Gemini</td><td><strong>CO</strong></td><td>45/32/18/5</td><td>Presented as a resolved design, no caveat on the k_La/solubility values used</td></tr>
+<tr><td>Copilot</td><td><strong>H₂</strong></td><td>32/58/10</td><td>Presented as a resolved design, references literature ranges</td></tr>
+<tr><td>GPT</td><td><strong>H₂</strong></td><td>38/62/0</td><td>Explicitly "provisional," flags assumed kLa(H₂), self-corrects its own math unprompted</td></tr>
+<tr><td>Claude</td><td><strong>CO</strong></td><td>54/29/12/5</td><td>Explicitly separates "fixes the ratio" from "fixes the efficiency"; most transparent about remaining CO/H₂ utilization gaps</td></tr>
+<tr class="diverge"><td>Dr. Curtis's trial</td><td><strong>CO</strong></td><td>67/23/10</td><td>Initially asserted a physically backwards kLa relationship with no caveat; corrected only after being directly challenged by the user — never self-audited</td></tr>
+</table>
+<p class="note" style="margin-top:10px;"><strong>Net read:</strong> the five trials split <strong>3-vs-2 in favor of a CO-majority feed</strong> (Gemini, Claude, and Dr. Curtis's corrected trial) <strong>vs. an H₂-majority feed</strong> (Copilot, GPT), because they disagree on whether the <em>feed</em> composition should match the <em>biological consumption ratio</em> directly (Copilot, GPT) or should be <em>inverted</em> to counteract each gas's differing mass-transfer coefficient/solubility so the <em>delivered</em> ratio matches the consumption ratio (Gemini, Claude, Dr. Curtis's trial post-correction). Claude is the most rigorous/transparent overall (explicit OTR equations per gas, explicit regime classification, explicit ratio-vs-efficiency caveat); GPT is the most epistemically cautious (repeatedly flags assumptions, self-corrects without being asked); Gemini is the most internally polished-looking but carries an unflagged ~1.8× error in its total gas-flow basis; Copilot is the most "rule-of-thumb," matching common literature H₂/CO ratios but without engineering around the stated kLa values as rigorously as Gemini/Claude. <strong>Dr. Curtis's trial is the cautionary tale of the set</strong> — it reaches a defensible final answer only because a domain expert caught a physically impossible claim (\(k_La_{H_2}<k_La_{CO}\) stated with full confidence) and forced a correction; left unchallenged, it would have shipped an H₂-rich recommendation built on backwards physics. This is precisely the risk Dr. Curtis's assignment was designed to surface.</p>
+</div>
+
+</section>
+
+</main>
+
+<footer>Compiled from four parallel AI chat transcripts (Gemini, Microsoft Copilot, ChatGPT, Claude) on syngas fermentation stoichiometry and reactor mass-transfer design. All chemistry/values reproduced as stated by each model; reasoning annotations and disparity analysis added for comparison.</footer>
+
+<script>
+document.querySelectorAll('.tabbtn[data-tab]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tabbtn[data-tab]').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    window.scrollTo(0,0);
+  });
+});
+document.getElementById('jumpCurtis').addEventListener('click',()=>{
+  document.querySelectorAll('.tabbtn[data-tab]').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.tabbtn[data-tab="p1"]').classList.add('active');
+  document.getElementById('p1').classList.add('active');
+  document.getElementById('curtis-block').scrollIntoView({behavior:'smooth',block:'start'});
+});
+</script>
+
+</body>
+</html>
